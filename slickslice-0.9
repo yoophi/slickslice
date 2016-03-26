@@ -71,7 +71,7 @@ SCREENSHOTS=$SCREENSHOTS
 # [defaults: yes]
 SHADOWS=$SHADOWS
 
-# The name of a jpeg viewer program
+# The name of a png viewer program
 # For KDE   - "kview" or "kuickshow" or other
 # For GNOME - "eog" or "gthumb" or other
 # [default: eog ]
@@ -89,9 +89,9 @@ ERASE=$ERASE
 # [default: '-vf pp=ac/lb']
 MPLAYER=$QUOTE$MPLAYER$QUOTE
 
-# Jpeg quality
+# Png quality
 # [default: 100]
-JPEGQUALITY=$JPEGQUALITY
+PNGQUALITY=$PNGQUALITY
 
 # Show md5sum in the stats table?
 # [default: no]
@@ -105,7 +105,7 @@ cat << EOF
 
 USAGE: `basename $0` options
 
-The program creates two jpeg files based on a videofile content:
+The program creates two png files based on a videofile content:
 a timeline view and 3 screenshots on a page.
 For more info: http://slickslice.sourceforge.net
 
@@ -125,9 +125,9 @@ OPTIONS:
                  [default: auto]
                  Ex: Force `basename $0` to use width 1066px for scaling detection:
                      `basename $0` -x video.avi -w 1066
-  -q  value      Custom jpeg quality (worst 1-100 best) 
-                 [default: $JPEGQUALITY]
-                 Ex: Set jpeg quality to 60:
+  -q  value      Custom png quality (worst 1-100 best) 
+                 [default: $PNGQUALITY]
+                 Ex: Set png quality to 60:
                      `basename $0` -x video.avi -q 60
   -c  value      Custom color of a thumbnail frame. Run 'identify -list color' for a list
                  of available colors. For more info www.imagemagick.org 
@@ -213,7 +213,7 @@ check_tools
 #TIMESTEP=
 DIMENSION=4x15
 FIRSTFRAME=10
-CUSTOMFONT="DejaVu-Sans-Condensed"
+CUSTOMFONT="ArialUnicode"
 FRAMECOLOR=#F0F0FF
 BACKGROUNDCOLOR=White
 FONTCOLOR=Black
@@ -223,7 +223,7 @@ VIEWPROGRAM="eog"
 SHOWNAME=yes
 ERASE=yes
 MPLAYER='-vf pp=ac/lb'
-JPEGQUALITY=100
+PNGQUALITY=100
 USEHASH=no
 
 if [ ! -f ~/.slickslice-config ]; then
@@ -296,8 +296,8 @@ do
              DIMENSION="$OPTARG"
              ;;
          q)
-			 echo "USER: JPEG quality: $OPTARG"
-             JPEGQUALITY="$OPTARG"
+			 echo "USER: png quality: $OPTARG"
+             PNGQUALITY="$OPTARG"
              ;;
          c)
 			 echo "USER: Selected frame color: $OPTARG"
@@ -390,16 +390,13 @@ fi
 echo "INFO: `file -b -i "$FULLPATHNAME"`"
 
 playtime=`mplayer -vo null -ao null -frames 0 -identify "$FULLPATHNAME" 2>/dev/null |\
- sed -ne '/^ID_/ { s/[]()|&;<>\`'"'"'\\!$" []/\\&/g;p }' |\
  grep --color=never '^ID_LENGTH=[.0-9]*' | sed -e 's/ID_LENGTH=//g'`
 
 video_width=`mplayer -vo null -ao null -frames 0 -identify "$FULLPATHNAME" 2>/dev/null |\
- sed -ne '/^ID_/ { s/[]()|&;<>\`'"'"'\\!$" []/\\&/g;p }' |\
  grep --color=never '^ID_VIDEO_WIDTH=[.0-9]*' | sed -e 's/ID_VIDEO_WIDTH=//g'`
 
 if [ "$video_width" == "" ]; then
 video_width=`mplayer -vo null -ao null -frames 0 -identify "$FULLPATHNAME" 2>/dev/null |\
- sed -ne '/^ID_/ { s/[]()|&;<>\`'"'"'\\!$" []/\\&/g;p }' |\
  grep --color=never '^ID_VIDEO_WIDTH=[.0-9]*' | sed -e 's/ID_VIDEO_WIDTH=//g'`
 	echo "INFO: Movie image width is undefined"
 	echo "WARN: Is this a videofile at all?"
@@ -477,7 +474,7 @@ pushd "$TEMPDIR" &> /dev/null
 # Check MPlayer for possible options errors
 
 WARNINGS=0
-mplayer -ao null "$FULLPATHNAME" -vo jpeg:outdir=./screenshots $MPLAYER -ss 5 -frames 1  &> ./slickslicemplayer.log
+mplayer -ao null "$FULLPATHNAME" -vo png:outdir=./screenshots $MPLAYER -ss 5 -frames 1  &> ./slickslicemplayer.log
 MPLAYERTEST="`cat ./slickslicemplayer.log | sed -e 's/Failed to open LIRC support.//g' | grep -e Error -e FATAL -e error -e 'Failed to open'`"
 
 if [[ "$MPLAYERTEST" != "" ]] ; then
@@ -494,9 +491,9 @@ fi
 FRAMECOUNTER=1
 while [ $COUNTER -le "$playtime" ] && [ $FRAMECOUNTER -le $TOTALTHUMBS ] 
 do 
-	mplayer -ao null -vf pp=ac $MPLAYER -vo jpeg:outdir=./screenshots -ss $COUNTER -frames 1 "$FULLPATHNAME" &>/dev/null
-	if [ ! -f ./screenshots/00000001.jpg ]; then let $((WARNINGS+=1)); fi
-	mv ./screenshots/00000001.jpg ./screenshots/${MASK:${#COUNTER}}$COUNTER.jpg 2>/dev/null 1> /dev/null
+	mplayer -ao null -vf pp=ac $MPLAYER -vo png:outdir=./screenshots -ss $COUNTER -frames 1 "$FULLPATHNAME" &>/dev/null
+	if [ ! -f ./screenshots/00000001.png ]; then let $((WARNINGS+=1)); fi
+	mv ./screenshots/00000001.png ./screenshots/${MASK:${#COUNTER}}$COUNTER.png 2>/dev/null 1> /dev/null
 	echo -ne "\033[200D"
 	echo -ne "\033[K"
 	echo -ne "INFO: Capturing a movie frame @ $COUNTER seconds"
@@ -517,21 +514,21 @@ mkdir ./labeledthumbs 2> /dev/null
 rm ./thumbs/* -f 2> /dev/null
 rm ./labeledthumbs/* -f 2> /dev/null
 
-ls -1 ./screenshots/*.jpg | while read jpgfile; do 
-	thumbfile=`basename "$jpgfile"`
+ls -1 ./screenshots/*.png | while read pngfile; do 
+	thumbfile=`basename "$pngfile"`
 	echo -ne "\033[200D"
 	echo -ne "\033[K"
 	echo -ne "INFO: Scaling $thumbfile into $thumbfile"
-	convert "$jpgfile" -scale "$SCALE" ./thumbs/thumb_"$thumbfile"
+	convert "$pngfile" -scale "$SCALE" ./thumbs/thumb_"$thumbfile"
 done
 	echo -ne "\033[200D"
 	echo -ne "\033[K"
 	echo "INFO: Finished making thumbnails."
 
 
-ls -1 ./thumbs/*.jpg | while read longfile; do
-	JPGFILE=`echo "$longfile" | sed -e 's/.\/thumbs\///g'`
-	NUMFILE=`echo "$JPGFILE"  | sed -e 's/.jpg//g' -e 's/thumb_//g'`
+ls -1 ./thumbs/*.png | while read longfile; do
+	PNGFILE=`echo "$longfile" | sed -e 's/.\/thumbs\///g'`
+	NUMFILE=`echo "$PNGFILE"  | sed -e 's/.png//g' -e 's/thumb_//g'`
 
 	TIMEVALUE=$((10#$NUMFILE+0))		
 	MINUTEZ=$[($TIMEVALUE-(($TIMEVALUE+0)/60/60)*60*60)/60]
@@ -543,9 +540,9 @@ ls -1 ./thumbs/*.jpg | while read longfile; do
 	LABLE="$TIMELABLE"
 	echo -ne "\033[200D"
 	echo -ne "\033[K"
-	echo -ne "INFO: Adding label \"$TIMELABLE\" to $JPGFILE "
+	echo -ne "INFO: Adding label \"$TIMELABLE\" to $PNGFILE "
 	montage -geometry +1+1 -background "$FRAMECOLOR" \
-	-label "$LABLE" $CUSTOMFONT -pointsize 9 "./thumbs/$JPGFILE" "./labeledthumbs/$NUMFILE.jpg"
+	-label "$LABLE" $CUSTOMFONT -pointsize 9 "./thumbs/$PNGFILE" "./labeledthumbs/$NUMFILE.png"
 done
 	echo -ne "\033[200D"
 	echo -ne "\033[K"
@@ -560,7 +557,7 @@ if [ "$SHADOWS" == "yes" ]; then
 fi
 
 echo -ne "INFO: Creating a timeline image..."
-montage $SHADOWS_OPTION -background "$BACKGROUNDCOLOR" -geometry +3+3 -tile $DIMHx$DIMW ./labeledthumbs/*.jpg thumb_panel.jpg
+montage $SHADOWS_OPTION -background "$BACKGROUNDCOLOR" -geometry +3+3 -tile $DIMHx$DIMW ./labeledthumbs/*.png thumb_panel.png
 echo "done"
 
 mplayer "$FULLPATHNAME" -ao null -endpos 0 -vo null 2>/dev/null > movieinfo
@@ -602,29 +599,29 @@ echo "INFO: Audio [$AUDIOCODEC] $AUDIOSTATS"
 echo "INFO: Duration $DURATION"
 if [ "$HASH" != "" ]; then echo "INFO: Hash $HASH"; fi
 echo ""
-echo "INFO: JPEG Quality set to $JPEGQUALITY"
+echo "INFO: PNG Quality set to $PNGQUALITY"
 
 MOVIENAME_FIXED=`echo $MOVIENAME | sed -e 's/\d39/\^/g'`
 if [ "$SHOWNAME" == "no" ]; then
 	MOVIENAME_FIXED="`echo $MOVIENAME_FIXED | sed -e 's/./X/g'`"
 fi
 
-convert  thumb_panel.jpg -gravity NorthWest -background "$BACKGROUNDCOLOR" $CUSTOMFONT -fill $FONTCOLOR -pointsize 13 -splice 0x85  \
+convert  thumb_panel.png -gravity NorthWest -background "$BACKGROUNDCOLOR" $CUSTOMFONT -fill $FONTCOLOR -pointsize 13 -splice 0x85  \
 -draw "text 15,5 'NAME:  $MOVIENAME_FIXED'" \
 -draw "text 15,25 'VIDEO: $VIDEO'"  \
 -draw "text 15,45 'AUDIO: [$AUDIOCODEC] $AUDIOSTATS'" \
 -draw "text 15,65 'DURATION: $DURATION'"  \
 -gravity NorthEast -draw "text 15,65 '$HASH'" \
 -draw "text 15,5 'SIZE: $FILESIZE'" \
-final_result.jpg
+final_result.png
 
-convert final_result.jpg -quality $JPEGQUALITY final.jpg
+convert final_result.png -quality $PNGQUALITY final.png
 
 popd &>/dev/null
 
-convert "$TEMPDIR/final.jpg" $CUSTOMFONT -pointsize 9 -gravity SouthEast \
+convert "$TEMPDIR/final.png" $CUSTOMFONT -pointsize 9 -gravity SouthEast \
 -background "$BACKGROUNDCOLOR" -splice 0x11 -draw "text 0,0 'slicksliced! - powered by imagemagick & mplayer - running on linux  '" \
-"./SLICKSLICED_$MOVIENAME.jpg"
+"./SLICKSLICED_$MOVIENAME.png"
 
 if [[ "$SCREENSHOTS" == "yes" ]]; then
 	NUMSCREENSHOTS=`ls -1 "$TEMPDIR/screenshots/"* | wc -l`
@@ -655,12 +652,12 @@ if [[ "$SCREENSHOTS" == "yes" ]]; then
 
 	echo -ne "INFO: Generating 3x fullsize screenshot preview..."
 	montage $SHADOWS_OPTION -background "$BACKGROUNDCOLOR" -geometry +5+5 -tile 1x \
-	"`cat "$TEMPDIR/screenshot.1"`"  "`cat "$TEMPDIR/screenshot.2"`" "`cat "$TEMPDIR/screenshot.3"`" "$TEMPDIR/fullsize_preview.jpg"
+	"`cat "$TEMPDIR/screenshot.1"`"  "`cat "$TEMPDIR/screenshot.2"`" "`cat "$TEMPDIR/screenshot.3"`" "$TEMPDIR/fullsize_preview.png"
 
-	convert "$TEMPDIR/fullsize_preview.jpg" $CUSTOMFONT -pointsize 9 -gravity SouthEast \
+	convert "$TEMPDIR/fullsize_preview.png" $CUSTOMFONT -pointsize 9 -gravity SouthEast \
 	-background "$BACKGROUNDCOLOR" -splice 0x11 -draw "text 0,0 'slicksliced! - powered by imagemagick & mplayer - running on linux  '" \
-	"$TEMPDIR/SCREENSHOTS_$MOVIENAME.jpg"
-	convert "$TEMPDIR/SCREENSHOTS_$MOVIENAME.jpg" -quality $JPEGQUALITY "./SCREENSHOTS_$MOVIENAME.jpg"
+	"$TEMPDIR/SCREENSHOTS_$MOVIENAME.png"
+	convert "$TEMPDIR/SCREENSHOTS_$MOVIENAME.png" -quality $PNGQUALITY "./SCREENSHOTS_$MOVIENAME.png"
 
 	echo "done"
 fi
@@ -676,13 +673,13 @@ which $VIEWPROGRAM &> /dev/null
 if [  $? -eq 0 ]; then
 		echo "INFO: Launching the preview program."
 		if [ "$SCREENSHOTS" == "yes" ]; then
-			$VIEWPROGRAM "SCREENSHOTS_$MOVIENAME.jpg" &
+			$VIEWPROGRAM "SCREENSHOTS_$MOVIENAME.png" &
 		fi
-		$VIEWPROGRAM "SLICKSLICED_$MOVIENAME.jpg" &
+		$VIEWPROGRAM "SLICKSLICED_$MOVIENAME.png" &
 	else
-		echo "WARN: Selected jpeg viewer '$VIEWPROGRAM' is not available."
+		echo "WARN: Selected png viewer '$VIEWPROGRAM' is not available."
 		echo "WARN: Please change this option in your slickslice config file:"
-		echo "WARN: ~/.slickslice-config to the jpeg viewer program installed"
+		echo "WARN: ~/.slickslice-config to the png viewer program installed"
 		echo "WARN: on this computer"
 fi
 
