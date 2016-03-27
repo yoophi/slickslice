@@ -574,7 +574,6 @@ DURATION="$TIMELABLE"
 VIDEO=`cat movieinfo | grep VIDEO\: | sed -e 's/VIDEO:  //g'`
 AUDIOSTATS=`cat movieinfo | grep AUDIO\: | sed -e 's/AUDIO://g'`
 AUDIOCODEC=`mplayer -vo null -ao null -frames 0 -identify "$FULLPATHNAME" 2>/dev/null |\
- sed -ne '/^ID_/ { s/[]()|&;<>\`'"'"'\\!$" []/\\&/g;p }' |\
  grep --color=never '^ID_AUDIO_FORMAT=*' | sed -e 's/ID_AUDIO_FORMAT=//g'`
 
 if [ "$AUDIOCODEC" == "85" ]; then
